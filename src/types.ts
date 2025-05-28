@@ -16,6 +16,12 @@ export const UltimateBeneficialOwnerSchema = z.object({
   address: AccountAddressSchema,
 });
 
+export const BusinessControllerSchema = z.object({
+  name: z.string(),
+  ssn: z.string(),
+  address: AccountAddressSchema,
+});
+
 export const AccountSchema = z.object({
   id: z.string(),
   status: z.string(),
@@ -26,7 +32,7 @@ export const AccountSchema = z.object({
   phone_number: z.string(),
   email: z.string().email(),
   website: z.string().optional(),
-  ultimate_beneficial_owners: z.array(UltimateBeneficialOwnerSchema),
+  business_controller: BusinessControllerSchema,
 });
 
 export const AccountCreateRequestSchema = z.object({
@@ -37,7 +43,7 @@ export const AccountCreateRequestSchema = z.object({
   phone_number: z.string(),
   email: z.string().email(),
   website: z.string().optional(),
-  ultimate_beneficial_owners: z.array(UltimateBeneficialOwnerSchema),
+  business_controller: BusinessControllerSchema,
 });
 
 // Transfer related schemas

@@ -181,6 +181,40 @@ brale_get_address_balances({
 })
 ```
 
+#### `brale_create_account`
+Create a new customer account with KYB details.
+
+**Parameters:**
+- `business_name` (required): The business name
+- `ein` (required): Employer Identification Number
+- `business_type` (required): Type of business (e.g., "Corporation", "LLC")
+- `address` (required): Business address object with street_line_1, city, state, zip, country
+- `phone_number` (required): Business phone number
+- `email` (required): Business email address
+- `website` (optional): Business website
+- `ultimate_beneficial_owners` (required): Array of UBO objects with name, ssn, and address
+- `idempotency_key` (optional): Unique key to prevent duplicate operations (auto-generated if not provided)
+
+#### `brale_create_transfer`
+Create a new transfer between accounts, addresses, or financial institutions.
+
+**Parameters:**
+- `account_id` (required): The ID of the account
+- `amount` (required): Object with value and currency (e.g., {value: "100", currency: "USD"})
+- `source` (required): Source endpoint with value_type, transfer_type, and optional address_id/financial_institution_id
+- `destination` (required): Destination endpoint with value_type, transfer_type, and optional address_id/financial_institution_id
+- `idempotency_key` (optional): Unique key to prevent duplicate operations (auto-generated if not provided)
+
+#### `brale_get_financial_institutions`
+Retrieve all financial institutions for a specific account.
+
+**Parameters:**
+- `account_id` (required): The ID of the account to get financial institutions for
+
+## PROMPTS
+
+For example prompts and usage patterns, see [PROMPTS.md](PROMPTS.md).
+
 ## API Reference
 
 This server wraps the following Brale API endpoints:

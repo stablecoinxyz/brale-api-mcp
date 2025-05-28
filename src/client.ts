@@ -120,9 +120,9 @@ export class BraleAPIClient {
   }
 
   // Account endpoints
-  async getAccounts(): Promise<Account[]> {
-    const response: AxiosResponse<Account[]> = await this.client.get('/accounts');
-    return response.data;
+  async getAccounts(): Promise<string[]> {
+    const response: AxiosResponse<{ accounts: string[] }> = await this.client.get('/accounts');
+    return response.data.accounts;
   }
 
   async getAccount(accountId: string): Promise<Account> {

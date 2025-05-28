@@ -45,6 +45,10 @@ class BraleAPIServer {
     this.setupErrorHandling();
   }
 
+  private generateIdempotencyKey(): string {
+    return `idemp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  }
+
   private setupErrorHandling(): void {
     this.server.onerror = (error) => console.error('[MCP Error]', error);
     process.on('SIGINT', async () => {
@@ -191,6 +195,166 @@ class BraleAPIServer {
               required: [],
             },
           },
+          {
+            name: 'brale_create_account',
+            description: 'Create a new customer account with KYB details',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                business_name: {
+                  type: 'string',
+                  description: 'The business name',
+                },
+                ein: {
+                  type: 'string',
+                  description: 'Employer Identification Number',
+                },
+                business_type: {
+                  type: 'string',
+                  description: 'Type of business (e.g., Corporation, LLC)',
+                },
+                address: {
+                  type: 'object',
+                  properties: {
+                    street_line_1: { type: 'string' },
+                    street_line_2: { type: 'string' },
+                    city: { type: 'string' },
+                    state: { type: 'string' },
+                    zip: { type: 'string' },
+                    country: { type: 'string' },
+                  },
+                  required: ['street_line_1', 'city', 'state', 'zip', 'country'],
+                },
+                phone_number: {
+                  type: 'string',
+                  description: 'Business phone number',
+                },
+                email: {
+                  type: 'string',
+                  description: 'Business email address',
+                },
+                website: {
+                  type: 'string',
+                  description: 'Business website',
+                },
+                business_controller: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    ssn: { type: 'string' },
+                    address: {
+                      type: 'object',
+                      properties: {
+                        street_line_1: { type: 'string' },
+                        street_line_2: { type: 'string' },
+                        city: { type: 'string' },
+                        state: { type: 'string' },
+                        zip: { type: 'string' },
+                        country: { type: 'string' },
+                      },
+                      required: ['street_line_1', 'city', 'state', 'zip', 'country'],
+                    },
+                  },
+                  required: ['name', 'ssn', 'address'],
+                },
+                idempotency_key: {
+                  type: 'string',
+                  description: 'Unique idempotency key to prevent duplicate operations (optional - will be auto-generated if not provided)',
+                },
+              },
+              required: ['business_name', 'ein', 'business_type', 'address', 'phone_number', 'email', 'business_controller'],
+            },
+          },
+          {
+            name: 'brale_create_transfer',
+            description: 'Create a new transfer between accounts, addresses, or financial institutions',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account',
+                },
+                amount: {
+                  type: 'object',
+                  properties: {
+                    value: {
+                      type: 'string',
+                      description: 'The amount to transfer',
+                    },
+                    currency: {
+                      type: 'string',
+                      description: 'The currency code (e.g., USD)',
+                    },
+                  },
+                  required: ['value', 'currency'],
+                },
+                source: {
+                  type: 'object',
+                  properties: {
+                    value_type: {
+                      type: 'string',
+                      description: 'Source value type (e.g., USD, USDC)',
+                    },
+                    transfer_type: {
+                      type: 'string',
+                      description: 'Source transfer type (e.g., wire, ethereum)',
+                    },
+                    address_id: {
+                      type: 'string',
+                      description: 'Source address ID (optional)',
+                    },
+                    financial_institution_id: {
+                      type: 'string',
+                      description: 'Source financial institution ID (optional)',
+                    },
+                  },
+                  required: ['value_type', 'transfer_type'],
+                },
+                destination: {
+                  type: 'object',
+                  properties: {
+                    value_type: {
+                      type: 'string',
+                      description: 'Destination value type (e.g., USD, USDC)',
+                    },
+                    transfer_type: {
+                      type: 'string',
+                      description: 'Destination transfer type (e.g., wire, ethereum)',
+                    },
+                    address_id: {
+                      type: 'string',
+                      description: 'Destination address ID (optional)',
+                    },
+                    financial_institution_id: {
+                      type: 'string',
+                      description: 'Destination financial institution ID (optional)',
+                    },
+                  },
+                  required: ['value_type', 'transfer_type'],
+                },
+                idempotency_key: {
+                  type: 'string',
+                  description: 'Unique idempotency key to prevent duplicate operations (optional - will be auto-generated if not provided)',
+                },
+              },
+              required: ['account_id', 'amount', 'source', 'destination'],
+            },
+          },
+          {
+            name: 'brale_get_financial_institutions',
+            description: 'Retrieve all financial institutions for a specific account',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account to get financial institutions for',
+                },
+              },
+              required: ['account_id'],
+            },
+          },
         ],
       };
     });
@@ -217,6 +381,12 @@ class BraleAPIServer {
             return await this.handleGetAddresses(args);
           case 'brale_get_address_balances':
             return await this.handleGetAddressBalances(args);
+          case 'brale_create_account':
+            return await this.handleCreateAccount(args);
+          case 'brale_create_transfer':
+            return await this.handleCreateTransfer(args);
+          case 'brale_get_financial_institutions':
+            return await this.handleGetFinancialInstitutions(args);
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -328,13 +498,13 @@ class BraleAPIServer {
 
   private async handleGetAccounts() {
     this.ensureConfigured();
-    const accounts = await this.braleClient!.getAccounts();
+    const accountIds = await this.braleClient!.getAccounts();
     
     return {
       content: [
         {
           type: 'text',
-          text: `Retrieved ${accounts.length} accounts:\n${JSON.stringify(accounts, null, 2)}`,
+          text: `Retrieved ${accountIds.length} account(s):\n${JSON.stringify(accountIds, null, 2)}`,
         },
       ],
     };
@@ -445,6 +615,85 @@ class BraleAPIServer {
         {
           type: 'text',
           text: `Address balances:\n${JSON.stringify(balances, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleCreateAccount(args: any) {
+    this.ensureConfigured();
+    const { business_name, ein, business_type, address, phone_number, email, website, business_controller, idempotency_key } = args;
+    
+    if (!business_name || !ein || !business_type || !address || !phone_number || !email || !business_controller) {
+      throw new McpError(ErrorCode.InvalidParams, 'business_name, ein, business_type, address, phone_number, email, and business_controller are required');
+    }
+
+    const accountData = {
+      business_name,
+      ein,
+      business_type,
+      address,
+      phone_number,
+      email,
+      website,
+      business_controller,
+    };
+
+    const idempotencyKeyToUse = idempotency_key || this.generateIdempotencyKey();
+    const account = await this.braleClient!.createAccount(accountData, idempotencyKeyToUse);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Account created successfully:\n${JSON.stringify(account, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleCreateTransfer(args: any) {
+    this.ensureConfigured();
+    const { account_id, amount, source, destination, idempotency_key } = args;
+    
+    if (!account_id || !amount || !source || !destination) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id, amount, source, and destination are required');
+    }
+
+    const transferData = {
+      amount,
+      source,
+      destination,
+    };
+
+    const idempotencyKeyToUse = idempotency_key || this.generateIdempotencyKey();
+    const transfer = await this.braleClient!.createTransfer(account_id, transferData, idempotencyKeyToUse);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Transfer created successfully:\n${JSON.stringify(transfer, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleGetFinancialInstitutions(args: any) {
+    this.ensureConfigured();
+    const { account_id } = args;
+    
+    if (!account_id) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id is required');
+    }
+
+    const institutionsResponse = await this.braleClient!.getFinancialInstitutions(account_id);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Retrieved ${institutionsResponse.financial_institutions.length} financial institutions for account ${account_id}:\n${JSON.stringify(institutionsResponse, null, 2)}`,
         },
       ],
     };
