@@ -1,0 +1,36 @@
+{
+  "name": "brale-api-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Brale API integration",
+  "type": "module",
+  "main": "src/server.ts",
+  "scripts": {
+    "start": "tsx src/server.ts",
+    "dev": "NODE_ENV=development MCP_DEBUG=true tsx watch src/server.ts",
+    "debug": "NODE_ENV=development MCP_DEBUG=true tsx src/server.ts",
+    "inspector": "NODE_ENV=development MCP_DEBUG=true npx @modelcontextprotocol/inspector tsx src/server.ts",
+    "prod": "NODE_ENV=production tsx src/server.ts",
+    "logs": "tail -f mcp-debug.log",
+    "clear-logs": "rm -f mcp-debug.log"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "tsx": "^4.19.2",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/inspector": "^1.0.4",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "keywords": [
+    "mcp",
+    "brale",
+    "api",
+    "stablecoin"
+  ],
+  "author": "Stable Coin Inc.",
+  "license": "MIT"
+}
