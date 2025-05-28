@@ -211,6 +211,55 @@ Retrieve all financial institutions for a specific account.
 **Parameters:**
 - `account_id` (required): The ID of the account to get financial institutions for
 
+#### `brale_get_financial_institution`
+Retrieve a specific financial institution by ID.
+
+**Parameters:**
+- `account_id` (required): The ID of the account
+- `institution_id` (required): The ID of the financial institution to retrieve
+
+#### `brale_create_external_financial_institution`
+Create a new external financial institution (bank account) for ACH/wire transfers.
+
+**Parameters:**
+- `account_id` (required): The ID of the account
+- `name` (required): Name for this financial institution (e.g., "Business Checking Account")
+- `transfer_type` (required): Array of transfer types supported (e.g., ["ach", "wire"])
+- `bank_details` (required): Bank account details object with owner, account_number, routing_number, name, address, account_type
+- `idempotency_key` (optional): Unique key to prevent duplicate operations (auto-generated if not provided)
+
+#### `brale_create_external_address`
+Create a new external address (non-custodial wallet) for the account.
+
+**Parameters:**
+- `account_id` (required): The ID of the account
+- `name` (required): Name for this address (e.g., "My MetaMask Wallet")
+- `transfer_types` (required): Array of blockchain networks supported (e.g., ["ethereum", "polygon", "base"])
+- `address` (required): The actual blockchain address (e.g., "0x...")
+- `idempotency_key` (optional): Unique key to prevent duplicate operations (auto-generated if not provided)
+
+#### `brale_get_automations`
+Retrieve all automations for a specific account.
+
+**Parameters:**
+- `account_id` (required): The ID of the account to get automations for
+
+#### `brale_get_automation`
+Retrieve a specific automation by ID.
+
+**Parameters:**
+- `account_id` (required): The ID of the account
+- `automation_id` (required): The ID of the automation to retrieve
+
+#### `brale_create_automation`
+Create a new automation for automated deposit addresses or onramps.
+
+**Parameters:**
+- `account_id` (required): The ID of the account
+- `name` (required): Name for this automation (e.g., "Customer Onramp")
+- `destination_address` (required): Object with address_id, value_type, and transfer_type
+- `idempotency_key` (optional): Unique key to prevent duplicate operations (auto-generated if not provided)
+
 ## PROMPTS
 
 For example prompts and usage patterns, see [PROMPTS.md](PROMPTS.md).

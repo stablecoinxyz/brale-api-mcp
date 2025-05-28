@@ -355,6 +355,192 @@ class BraleAPIServer {
               required: ['account_id'],
             },
           },
+          {
+            name: 'brale_get_financial_institution',
+            description: 'Retrieve a specific financial institution by ID',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account',
+                },
+                institution_id: {
+                  type: 'string',
+                  description: 'The ID of the financial institution to retrieve',
+                },
+              },
+              required: ['account_id', 'institution_id'],
+            },
+          },
+          {
+            name: 'brale_create_external_financial_institution',
+            description: 'Create a new external financial institution (bank account) for ACH/wire transfers',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account',
+                },
+                name: {
+                  type: 'string',
+                  description: 'Name for this financial institution (e.g., "Business Checking Account")',
+                },
+                transfer_type: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Transfer types supported (e.g., ["ach", "wire"])',
+                },
+                bank_details: {
+                  type: 'object',
+                  properties: {
+                    owner: {
+                      type: 'string',
+                      description: 'Account owner name',
+                    },
+                    account_number: {
+                      type: 'string',
+                      description: 'Bank account number',
+                    },
+                    routing_number: {
+                      type: 'string',
+                      description: 'Bank routing number',
+                    },
+                    name: {
+                      type: 'string',
+                      description: 'Bank name',
+                    },
+                    address: {
+                      type: 'object',
+                      properties: {
+                        street_line_1: { type: 'string' },
+                        street_line_2: { type: 'string' },
+                        city: { type: 'string' },
+                        state: { type: 'string' },
+                        zip: { type: 'string' },
+                        country: { type: 'string' },
+                      },
+                      required: ['street_line_1', 'city', 'state', 'zip', 'country'],
+                    },
+                    account_type: {
+                      type: 'string',
+                      description: 'Account type (e.g., "checking", "savings")',
+                    },
+                  },
+                  required: ['owner', 'account_number', 'routing_number', 'name', 'address', 'account_type'],
+                },
+                idempotency_key: {
+                  type: 'string',
+                  description: 'Unique idempotency key to prevent duplicate operations (optional - will be auto-generated if not provided)',
+                },
+              },
+              required: ['account_id', 'name', 'transfer_type', 'bank_details'],
+            },
+          },
+          {
+            name: 'brale_create_external_address',
+            description: 'Create a new external address (non-custodial wallet) for the account',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account',
+                },
+                name: {
+                  type: 'string',
+                  description: 'Name for this address (e.g., "My MetaMask Wallet")',
+                },
+                transfer_types: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Blockchain networks supported (e.g., ["ethereum", "polygon", "base"])',
+                },
+                address: {
+                  type: 'string',
+                  description: 'The actual blockchain address (e.g., "0x...")',
+                },
+                idempotency_key: {
+                  type: 'string',
+                  description: 'Unique idempotency key to prevent duplicate operations (optional - will be auto-generated if not provided)',
+                },
+              },
+              required: ['account_id', 'name', 'transfer_types', 'address'],
+            },
+          },
+          {
+            name: 'brale_get_automations',
+            description: 'Retrieve all automations for a specific account',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account to get automations for',
+                },
+              },
+              required: ['account_id'],
+            },
+          },
+          {
+            name: 'brale_get_automation',
+            description: 'Retrieve a specific automation by ID',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account',
+                },
+                automation_id: {
+                  type: 'string',
+                  description: 'The ID of the automation to retrieve',
+                },
+              },
+              required: ['account_id', 'automation_id'],
+            },
+          },
+          {
+            name: 'brale_create_automation',
+            description: 'Create a new automation for automated deposit addresses or onramps',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                account_id: {
+                  type: 'string',
+                  description: 'The ID of the account',
+                },
+                name: {
+                  type: 'string',
+                  description: 'Name for this automation (e.g., "Customer Onramp")',
+                },
+                destination_address: {
+                  type: 'object',
+                  properties: {
+                    address_id: {
+                      type: 'string',
+                      description: 'The destination address ID',
+                    },
+                    value_type: {
+                      type: 'string',
+                      description: 'The token type (e.g., "SBC", "USDC")',
+                    },
+                    transfer_type: {
+                      type: 'string',
+                      description: 'The blockchain network (e.g., "ethereum", "base")',
+                    },
+                  },
+                  required: ['address_id', 'value_type', 'transfer_type'],
+                },
+                idempotency_key: {
+                  type: 'string',
+                  description: 'Unique idempotency key to prevent duplicate operations (optional - will be auto-generated if not provided)',
+                },
+              },
+              required: ['account_id', 'name', 'destination_address'],
+            },
+          },
         ],
       };
     });
@@ -387,6 +573,18 @@ class BraleAPIServer {
             return await this.handleCreateTransfer(args);
           case 'brale_get_financial_institutions':
             return await this.handleGetFinancialInstitutions(args);
+          case 'brale_get_financial_institution':
+            return await this.handleGetFinancialInstitution(args);
+          case 'brale_create_external_financial_institution':
+            return await this.handleCreateExternalFinancialInstitution(args);
+          case 'brale_create_external_address':
+            return await this.handleCreateExternalAddress(args);
+          case 'brale_get_automations':
+            return await this.handleGetAutomations(args);
+          case 'brale_get_automation':
+            return await this.handleGetAutomation(args);
+          case 'brale_create_automation':
+            return await this.handleCreateAutomation(args);
           default:
             throw new McpError(
               ErrorCode.MethodNotFound,
@@ -694,6 +892,146 @@ class BraleAPIServer {
         {
           type: 'text',
           text: `Retrieved ${institutionsResponse.financial_institutions.length} financial institutions for account ${account_id}:\n${JSON.stringify(institutionsResponse, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleGetFinancialInstitution(args: any) {
+    this.ensureConfigured();
+    const { account_id, institution_id } = args;
+    
+    if (!account_id || !institution_id) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id and institution_id are required');
+    }
+
+    const institution = await this.braleClient!.getFinancialInstitution(account_id, institution_id);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Financial institution details:\n${JSON.stringify(institution, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleCreateExternalFinancialInstitution(args: any) {
+    this.ensureConfigured();
+    const { account_id, name, transfer_type, bank_details, idempotency_key } = args;
+    
+    if (!account_id || !name || !transfer_type || !bank_details) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id, name, transfer_type, and bank_details are required');
+    }
+
+    const financialInstitutionData = {
+      name,
+      transfer_type,
+      bank_details,
+    };
+
+    const idempotencyKeyToUse = idempotency_key || this.generateIdempotencyKey();
+    const financialInstitution = await this.braleClient!.createExternalFinancialInstitution(account_id, financialInstitutionData, idempotencyKeyToUse);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Financial institution created successfully:\n${JSON.stringify(financialInstitution, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleCreateExternalAddress(args: any) {
+    this.ensureConfigured();
+    const { account_id, name, transfer_types, address, idempotency_key } = args;
+    
+    if (!account_id || !name || !transfer_types || !address) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id, name, transfer_types, and address are required');
+    }
+
+    const externalAddressData = {
+      name,
+      transfer_types,
+      address,
+    };
+
+    const idempotencyKeyToUse = idempotency_key || this.generateIdempotencyKey();
+    const externalAddress = await this.braleClient!.createExternalAddress(account_id, externalAddressData, idempotencyKeyToUse);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `External address created successfully:\n${JSON.stringify(externalAddress, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleGetAutomations(args: any) {
+    this.ensureConfigured();
+    const { account_id } = args;
+    
+    if (!account_id) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id is required');
+    }
+
+    const automationsResponse = await this.braleClient!.getAutomations(account_id);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Retrieved ${automationsResponse.automations.length} automations for account ${account_id}:\n${JSON.stringify(automationsResponse, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleGetAutomation(args: any) {
+    this.ensureConfigured();
+    const { account_id, automation_id } = args;
+    
+    if (!account_id || !automation_id) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id and automation_id are required');
+    }
+
+    const automation = await this.braleClient!.getAutomation(account_id, automation_id);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Automation details:\n${JSON.stringify(automation, null, 2)}`,
+        },
+      ],
+    };
+  }
+
+  private async handleCreateAutomation(args: any) {
+    this.ensureConfigured();
+    const { account_id, name, destination_address, idempotency_key } = args;
+    
+    if (!account_id || !name || !destination_address) {
+      throw new McpError(ErrorCode.InvalidParams, 'account_id, name, and destination_address are required');
+    }
+
+    const automationData = {
+      name,
+      destination_address,
+    };
+
+    const idempotencyKeyToUse = idempotency_key || this.generateIdempotencyKey();
+    const automation = await this.braleClient!.createAutomation(account_id, automationData, idempotencyKeyToUse);
+    
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Automation created successfully:\n${JSON.stringify(automation, null, 2)}`,
         },
       ],
     };
