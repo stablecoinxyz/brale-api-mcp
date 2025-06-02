@@ -12,17 +12,7 @@ import { BraleAPIClient } from './client.js';
 import { logger } from './logger.js';
 import * as dotenv from 'dotenv';
 
-// Load environment variables - ensure we look in the project root
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const projectRoot = join(__dirname, '..');
-
-dotenv.config({ path: join(projectRoot, '.env') });
-
-// Load environment variables and start server
+dotenv.config();
 
 class BraleAPIServer {
   private server: Server;

@@ -38,3 +38,4 @@ tmp/
 
 # New additions
 mcp-debug.log 
+debug/
